@@ -1,0 +1,229 @@
+# SPTime Configuration File
+# ===========================
+# This is the main configuration file for SPTime.
+# Copy this to /etc/sptime/config.yaml and adjust as needed.
+#
+# Environment variables can be used with ${VAR_NAME} syntax.
+# Example: jwt_secret: "${SPTIME_JWT_SECRET}"
+
+# ============================================================================
+# NTP Server Configuration
+# ============================================================================
+ntp:
+  # Enable NTP server
+  enabled: true
+
+  # UDP port to listen on (default: 123, requires root or CAP_NET_BIND_SERVICE)
+  port: 123
+
+  # Interface to bind to (empty = all interfaces)
+  interface: ""
+
+  # Server stratum level (1-15)
+  # Stratum 1: Direct connection to reference clock (GPS)
+  # Stratum 2: Synced to stratum 1 servers
+  stratum: 2
+
+  # Poll interval for upstream peers (default: 64s)
+  poll_interval: 64s
+
+  # Reference ID (4 characters, e.g., GPS, LOCL, PPS)
+  ref_id: "LOCL"
+
+  # Upstream NTP peers
+  upstream_peers:
+    - address: "time.cloudflare.com:123"
+      prefer: true
+      iburst: true
+      minpoll: 4
+      maxpoll: 6
+      nts_enabled: false
+
+    - address: "time.google.com:123"
+      prefer: false
+      iburst: true
+      minpoll: 4
+      maxpoll: 6
+      nts_enabled: false
+
+    - address: "pool.ntp.org:123"
+      prefer: false
+      iburst: true
+      minpoll: 4
+      maxpoll: 6
+      nts_enabled: false
+
+  # Allowed networks (CIDR notation, empty = allow all)
+  allowed_networks: []
+
+# ============================================================================
+# NTS (Network Time Security) Configuration
+# ============================================================================
+nts:
+  # Enable NTS server
+  enabled: false
+
+  # NTS-KE (Key Exchange) port (default: 4460)
+  ke_port: 4460
+
+  # TLS certificate and key for NTS-KE
+  cert_path: "/etc/sptime/certs/server.crt"
+  key_path: "/etc/sptime/certs/server.key"
+
+  # CA certificate for client verification (optional)
+  ca_path: ""
+
+  # Cookie encryption key (auto-generated if empty)
+  # Can be set via environment: ${SPTIME_NTS_COOKIE_KEY}
+  cookie_key: ""
+
+  # Minimum TLS version (1.3 recommended for NTS)
+  min_tls_version: "1.3"
+
+# ============================================================================
+# PTP (Precision Time Protocol) Grandmaster Configuration
+# ============================================================================
+ptp:
+  # Enable PTP Grandmaster
+  enabled: false
+
+  # Network interface for PTP
+  interface: "eth0"
+
+  # PTP domain (0-127)
+  domain: 0
+
+  # Clock priority (0-255, lower = higher priority)
+  priority1: 128
+  priority2: 128
+
+  # Clock class (see IEEE 1588 for values)
+  # 6: Primary reference (GPS)
+  # 7: Primary reference holdover
+  # 248: Default
+  clock_class: 248
+
+  # Clock accuracy (see IEEE 1588 for values)
+  # 0x20: 25 ns
+  # 0x21: 100 ns
+  # 0xFE: Unknown
+  clock_accuracy: 0xFE
+
+  # Log message intervals (power of 2)
+  # 0 = 1 second, -1 = 500ms, 1 = 2 seconds
+  log_announce_interval: 1
+  log_sync_interval: 0
+  log_min_delay_req_interval: 0
+
+  # Transport mode: "multicast" or "unicast"
+  transport_mode: "multicast"
+
+  # Delay mechanism: "E2E" or "P2P"
+  delay_mechanism: "E2E"
+
+  # Profile: "default", "smpte2059", "telecom", "power"
+  profile: "default"
+
+  # Two-step mode (recommended for software timestamps)
+  two_step_flag: true
+
+# ============================================================================
+# GPSDO (GPS Disciplined Oscillator) Configuration
+# ============================================================================
+gpsdo:
+  # Enable GPSDO
+  enabled: false
+
+  # GPSDO type: "serialpps", "network", or "dummy"
+  type: "dummy"
+
+  # Serial device for NMEA data (serialpps type)
+  serial_device: "/dev/ttyUSB0"
+  serial_baud: 9600
+
+  # PPS device (serialpps type)
+  pps_device: "/dev/pps0"
+
+  # Network address (network type)
+  network_address: ""
+
+  # NMEA sentences to parse
+  nmea_sentences:
+    - "GPRMC"
+    - "GPGGA"
+    - "GPGSV"
+    - "GPGSA"
+
+  # Poll interval
+  poll_interval: 1s
+
+# ============================================================================
+# Web API and GUI Configuration
+# ============================================================================
+web:
+  # HTTP port
+  port: 8080
+
+  # Bind address
+  bind_address: "0.0.0.0"
+
+  # Enable TLS for Web API
+  tls_enabled: false
+  tls_cert: "/etc/sptime/certs/web.crt"
+  tls_key: "/etc/sptime/certs/web.key"
+
+  # JWT configuration for authentication
+  # IMPORTANT: Change this in production!
+  jwt_secret: "${SPTIME_JWT_SECRET:-changeme-in-production}"
+  jwt_expiry: 24h
+
+  # Session timeout
+  session_timeout: 30m
+
+  # Allowed CORS origins (empty = same origin only)
+  allowed_origins:
+    - "http://localhost:3000"
+
+  # Read-only mode (allow unauthenticated read access)
+  read_only_mode: false
+
+  # Rate limiting (requests per second)
+  rate_limit_rps: 100
+
+  # User accounts
+  # Password hashes can be generated with: htpasswd -bnBC 10 "" password | tr -d ':\n'
+  users:
+    - username: "admin"
+      # Default password: "admin" - CHANGE IN PRODUCTION!
+      password_hash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.AEwkWUJhX2pUVzWUHu"
+      role: "admin"
+
+    # Example additional users:
+    # - username: "operator"
+    #   password_hash: "$2a$10$..."
+    #   role: "operator"
+    #
+    # - username: "viewer"
+    #   password_hash: "$2a$10$..."
+    #   role: "viewer"
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+logging:
+  # Log level: "debug", "info", "warn", "error"
+  level: "info"
+
+  # Log format: "json" or "text"
+  format: "json"
+
+  # Output: "stdout", "stderr", or "file"
+  output: "stdout"
+
+  # File path (if output is "file")
+  file_path: "/var/log/sptime/sptime.log"
+
+  # Log rotation settings
+  max_size_mb: 100
+  max_backups: 3
+  max_age_days: 28

@@ -1,0 +1,50 @@
+# Binaries
+backend/sptime
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node.js
+frontend/node_modules/
+frontend/dist/
+.npm
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local test directory
+test/
+
+# AI/LLM local settings
+.claude/
+.cursor/
+.aider/
+.continue/

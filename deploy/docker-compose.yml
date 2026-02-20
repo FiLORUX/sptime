@@ -1,0 +1,123 @@
+# SPTime Docker Compose Configuration
+# Starts the complete SPTime stack with backend and frontend
+
+version: '3.8'
+
+services:
+  # Backend service - NTP/NTS/PTP server with Web API
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    container_name: sptime-backend
+    restart: unless-stopped
+    ports:
+      # NTP (requires --privileged or CAP_NET_BIND_SERVICE for port 123)
+      - "123:123/udp"
+      # NTS Key Exchange
+      - "4460:4460/tcp"
+      # PTP (if enabled)
+      - "319:319/udp"
+      - "320:320/udp"
+      # Web API (internal, proxied by frontend)
+      - "8080:8080"
+    volumes:
+      # Configuration
+      - ./config.yaml:/etc/sptime/config.yaml:ro
+      # TLS certificates for NTS (if using)
+      - ./certs:/etc/sptime/certs:ro
+      # Persistent data
+      - sptime-data:/var/lib/sptime
+      # Logs
+      - sptime-logs:/var/log/sptime
+      # PPS device (if using GPSDO)
+      # - /dev/pps0:/dev/pps0
+    environment:
+      - TZ=UTC
+      # Override config values via environment
+      # - SPTIME_WEB_JWT_SECRET=${JWT_SECRET}
+    networks:
+      - sptime-net
+    # Required for NTP on port 123
+    cap_add:
+      - NET_BIND_SERVICE
+    # For PTP, you may need:
+    # - NET_ADMIN
+    # - SYS_TIME
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Frontend service - React SPA with nginx
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    container_name: sptime-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # For HTTPS, uncomment and configure:
+      # - "443:443"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - sptime-net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Optional: Prometheus for metrics collection
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: sptime-prometheus
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus-data:/prometheus
+  #   networks:
+  #     - sptime-net
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.enable-lifecycle'
+
+  # Optional: Grafana for visualization
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: sptime-grafana
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   networks:
+  #     - sptime-net
+  #   depends_on:
+  #     - prometheus
+
+volumes:
+  sptime-data:
+    name: sptime-data
+  sptime-logs:
+    name: sptime-logs
+  # prometheus-data:
+  #   name: sptime-prometheus-data
+  # grafana-data:
+  #   name: sptime-grafana-data
+
+networks:
+  sptime-net:
+    name: sptime-network
+    driver: bridge
