@@ -1,4 +1,4 @@
-// Dashboard page - main overview of time synchronization status
+// Dashboard page - main overview of time synchronisation status
 import { useStatusStore } from '../store';
 import { Clock, Radio, Shield, Satellite, TrendingUp, Activity } from 'lucide-react';
 import clsx from 'clsx';
@@ -106,7 +106,7 @@ export default function Dashboard() {
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400">Time synchronization overview</p>
+        <p className="text-gray-400">Time synchronisation overview</p>
       </div>
 
       {/* Main clock status */}
