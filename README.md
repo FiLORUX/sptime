@@ -39,29 +39,29 @@ SPTime is a modern, enterprise-grade time synchronisation platform that provides
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         SPTime Server                            │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │
-│  │   NTP    │  │   NTS    │  │   PTP    │  │     GPSDO        │ │
-│  │  Server  │  │  Server  │  │   GM     │  │  (SerialPPS/     │ │
-│  │  :123    │  │  :4460   │  │  :319/320│  │   Network/Dummy) │ │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘ │
-│       │             │             │                  │           │
-│       └─────────────┴──────┬──────┴──────────────────┘           │
-│                            │                                      │
-│                    ┌───────┴───────┐                             │
-│                    │ Clock Manager │                             │
-│                    │ (Discipline)  │                             │
-│                    └───────┬───────┘                             │
-│                            │                                      │
-│  ┌──────────────────┬──────┴──────┬────────────────────────────┐ │
-│  │                  │             │                            │ │
-│  │    Web API       │   Metrics   │        Config              │ │
-│  │    :8080         │  Prometheus │        YAML                │ │
-│  └──────────────────┴─────────────┴────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph SPTime["SPTime Server"]
+        NTP["NTP Server<br/>:123"]
+        NTS["NTS Server<br/>:4460"]
+        PTP["PTP GM<br/>:319/320"]
+        GPSDO["GPSDO<br/>(SerialPPS / Network / Dummy)"]
+
+        Clock["Clock Manager<br/>(Discipline)"]
+
+        Web["Web API<br/>:8080"]
+        Metrics["Metrics<br/>(Prometheus)"]
+        Config["Config<br/>(YAML)"]
+
+        NTP   --> Clock
+        NTS   --> Clock
+        PTP   --> Clock
+        GPSDO --> Clock
+
+        Clock --> Web
+        Clock --> Metrics
+        Clock --> Config
+    end
 ```
 
 ## Quick Start
