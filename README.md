@@ -1,12 +1,30 @@
 # SPTime - Precision Time Synchronisation Platform
 
-SPTime is a modern, enterprise-grade time synchronisation platform that provides NTP, NTS (Network Time Security), and PTP (Precision Time Protocol) services with optional GPSDO integration for stratum 1 operation.
+SPTime is a time synchronisation platform: an NTP/NTS time service with
+optional GPSDO integration, plus an experimental PTP announcer. Go backend,
+React dashboard, Docker deployment.
+
+> **Naming note.** The name is an homage to `sptime.se`, the NTP service of
+> SP in Borås (now RISE), keepers of Sweden's national time scale UTC(SP).
+> This project is independent and **not affiliated with RISE/SP** in any way.
+
+## Project status
+
+Honesty about maturity, per component:
+
+| Component | State |
+|-----------|-------|
+| NTP server (RFC 5905) | Implemented: UDP packet handling, upstream peers, offset/jitter tracking |
+| NTS (RFC 8915) | Implemented: NTS-KE over TLS 1.3, AES-GCM cookies. Not yet interop-tested against major NTS clients |
+| GPSDO (Serial/PPS) | Implemented: NMEA + PPS discipline; a dummy source for lab use. Network GPS is a placeholder |
+| PTP (IEEE 1588) | **Experimental skeleton**: sends Announce/Sync/Follow_Up on UDP 319/320 with *software* timestamps. No BMCA, no hardware timestamping, no servo loop. Do not use where PTP-grade accuracy matters |
+| Web GUI / API | Implemented: WebSocket dashboard, JWT auth, Prometheus metrics |
 
 ## Features
 
 - **NTP Server** (RFC 5905 / NTPv4)
   - Stratum 2 operation with upstream peers
-  - Stratum 1 capable with GPSDO integration
+  - Stratum 1 operation possible with a disciplined GPSDO source (hardware dependent)
   - Full packet handling with offset/jitter calculation
   - Configurable upstream peer management
 
@@ -15,10 +33,10 @@ SPTime is a modern, enterprise-grade time synchronisation platform that provides
   - Secure cookie management with AES-GCM
   - Session tracking and automatic cleanup
 
-- **PTP Grandmaster** (IEEE 1588-2008 / PTPv2)
-  - Default profile support
-  - E2E and P2P delay mechanisms
-  - Architecture ready for SMPTE 2059 and telecom profiles
+- **PTP announcer, experimental** (IEEE 1588-2008 message format)
+  - Announce/Sync/Follow_Up transmission, E2E and P2P delay message handling
+  - Software timestamps only; no BMCA, no hardware timestamping (see Project status)
+  - Architecture sketched towards SMPTE 2059 and telecom profiles
 
 - **GPSDO Integration**
   - Serial/PPS support (NMEA + /dev/pps0)
@@ -360,6 +378,14 @@ MIT Licence — see LICENSE file for details.
 - [beevik/ntp](https://github.com/beevik/ntp) - NTP client library inspiration
 - [IEEE 1588](https://www.ieee.org/) - PTP standard
 - [RFC 8915](https://datatracker.ietf.org/doc/html/rfc8915) - NTS specification
+
+## Related
+
+SPTime is the *serving* end of the wire. The *consuming* end is
+[tsg-thast-timing](https://github.com/FiLORUX/tsg-thast-timing), a
+monotonic-backed broadcast clock that disciplines and displays time arriving
+over NTP. The two are deliberately separate projects: one serves time, one
+presents it.
 
 ---
 
